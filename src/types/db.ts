@@ -19,6 +19,8 @@ export type Tarea = {
   orden: number;
   created_at: string;
   updated_at: string;
+  completada?: boolean;
+  completada_at?: string | null;
 };
 
 export type TareaInteresado = {

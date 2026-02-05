@@ -99,41 +99,43 @@ export default function CrearPage() {
           Nombre, slug para la URL y clave para editar (guárdala).
         </p>
 
-        {/* Prueba de conexión */}
-        <section className="rounded-lg border border-neutral-200 dark:border-neutral-700 p-4 bg-neutral-50 dark:bg-neutral-800/50">
-          <h2 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-            Probar conexión con Supabase
-          </h2>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2 font-mono">
-            URL que usa el cliente: {supabaseHost}
-          </p>
-          {isPlaceholderUrl(supabaseHost) && (
-            <p className="text-sm text-amber-600 dark:text-amber-400 mb-2">
-              La URL parece de ejemplo. Configurá .env con NEXT_PUBLIC_SUPABASE_URL (tu URL real en Project Settings → API). Borrá la carpeta <code className="bg-neutral-200 dark:bg-neutral-700 px-1 rounded">.next</code>, reiniciá con <code className="bg-neutral-200 dark:bg-neutral-700 px-1 rounded">npm run dev</code> y recargá.
+        {/* Prueba de conexión: solo en desarrollo */}
+        {process.env.NODE_ENV === "development" && (
+          <section className="rounded-lg border border-neutral-200 dark:border-neutral-700 p-4 bg-neutral-50 dark:bg-neutral-800/50">
+            <h2 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+              Probar conexión con Supabase
+            </h2>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2 font-mono">
+              URL que usa el cliente: {supabaseHost}
             </p>
-          )}
-          {typeof window !== "undefined" && !hasEnv && (
-            <p className="text-sm text-amber-600 dark:text-amber-400 mb-2">
-              En el navegador no se ven NEXT_PUBLIC_SUPABASE_URL ni ANON_KEY. Revisá .env y reiniciá el servidor.
-            </p>
-          )}
-          <button
-            type="button"
-            onClick={runTest}
-            disabled={testLoading}
-            className="px-4 py-2 rounded-lg bg-neutral-700 dark:bg-neutral-600 text-white text-sm font-medium hover:bg-neutral-600 dark:hover:bg-neutral-500 disabled:opacity-50"
-          >
-            {testLoading ? "Probando…" : "Crear registro de prueba"}
-          </button>
-          {testResult && (
-            <div
-              className={`mt-3 p-3 rounded text-sm ${testResult.ok ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200" : "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200"}`}
+            {isPlaceholderUrl(supabaseHost) && (
+              <p className="text-sm text-amber-600 dark:text-amber-400 mb-2">
+                La URL parece de ejemplo. Configurá .env con NEXT_PUBLIC_SUPABASE_URL (tu URL real en Project Settings → API). Borrá la carpeta <code className="bg-neutral-200 dark:bg-neutral-700 px-1 rounded">.next</code>, reiniciá con <code className="bg-neutral-200 dark:bg-neutral-700 px-1 rounded">npm run dev</code> y recargá.
+              </p>
+            )}
+            {typeof window !== "undefined" && !hasEnv && (
+              <p className="text-sm text-amber-600 dark:text-amber-400 mb-2">
+                En el navegador no se ven NEXT_PUBLIC_SUPABASE_URL ni ANON_KEY. Revisá .env y reiniciá el servidor.
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={runTest}
+              disabled={testLoading}
+              className="px-4 py-2 rounded-lg bg-neutral-700 dark:bg-neutral-600 text-white text-sm font-medium hover:bg-neutral-600 dark:hover:bg-neutral-500 disabled:opacity-50"
             >
-              {testResult.ok ? "✓ " : "✗ "}
-              {testResult.msg}
-            </div>
-          )}
-        </section>
+              {testLoading ? "Probando…" : "Crear registro de prueba"}
+            </button>
+            {testResult && (
+              <div
+                className={`mt-3 p-3 rounded text-sm ${testResult.ok ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200" : "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200"}`}
+              >
+                {testResult.ok ? "✓ " : "✗ "}
+                {testResult.msg}
+              </div>
+            )}
+          </section>
+        )}
 
         <form onSubmit={submit} className="space-y-4">
           <div>

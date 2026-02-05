@@ -16,6 +16,7 @@ import {
   addResponsableClient,
   removeResponsableClient,
   reorderTareasClient,
+  markTareaCompletadaClient,
 } from "@/lib/supabase-rpc";
 import { getEditKeyForSlug, setStoredEditKey, clearEditKey } from "@/lib/edit-key-storage";
 import { PRIORIDAD_LABELS } from "@/lib/labels";
@@ -240,6 +241,15 @@ export function PersonaPageClient({
     }
   }
 
+  async function handleMarkCompletada(tareaId: string) {
+    const key = getEditKeyForSlug(slug);
+    if (!key) return;
+    const { error } = await markTareaCompletadaClient(slug, key, tareaId);
+    if (error) return;
+    setTareas((prev) => prev.filter((t) => t.id !== tareaId));
+    setEditingTareaId(null);
+  }
+
   async function handleReorder(newOrderIds: string[]) {
     const key = getEditKeyForSlug(slug);
     if (!key || newOrderIds.length === 0) return;
@@ -360,6 +370,9 @@ export function PersonaPageClient({
                 Dejar de editar
               </button>
             )}
+            <Link href={`/p/${encodeURIComponent(slug)}/completadas`} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+              Tareas completas
+            </Link>
             <Link href="/" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
               Inicio
             </Link>
@@ -443,13 +456,22 @@ export function PersonaPageClient({
                       <PrioridadBadge prioridad={tarea.prioridad} />
                       <EstadoActual estado={tarea.estado} />
                       {isEditing && (
-                        <button
-                          type="button"
-                          onClick={() => setEditingTareaId(tarea.id)}
-                          className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                        >
-                          Editar
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setEditingTareaId(tarea.id)}
+                            className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMarkCompletada(tarea.id)}
+                            className="text-sm text-emerald-600 dark:text-emerald-400 hover:underline"
+                          >
+                            Marcar como completada
+                          </button>
+                        </>
                       )}
                     </div>
                     {tarea.created_at && (

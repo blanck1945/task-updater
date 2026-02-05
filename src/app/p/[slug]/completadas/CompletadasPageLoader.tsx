@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
-import { PersonaPageClient } from "./PersonaPageClient";
+import { CompletadasPageClient } from "./CompletadasPageClient";
 import type { TareaConInteresados } from "@/types/db";
 
 type PersonaSafe = {
@@ -14,7 +14,7 @@ type PersonaSafe = {
   updated_at: string;
 };
 
-export default function PersonaPageLoader({ slug }: { slug: string }) {
+export default function CompletadasPageLoader({ slug }: { slug: string }) {
   const [persona, setPersona] = useState<PersonaSafe | null>(null);
   const [tareas, setTareas] = useState<TareaConInteresados[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,12 +48,20 @@ export default function PersonaPageLoader({ slug }: { slug: string }) {
           setLoading(false);
           return;
         }
-        const tareasPendientes = (tareasData ?? []).filter((t: { completada?: boolean }) => !t.completada);
-        const tareaIds = tareasPendientes.map((t: { id: string }) => t.id);
+        const tareasCompletadas = (tareasData ?? []).filter(
+          (t: { completada?: boolean }) => t.completada === true
+        );
+        const tareaIds = tareasCompletadas.map((t: { id: string }) => t.id);
         const [interesadosRes, responsablesRes, timelineRes] = await Promise.all([
-          supabase.from("tareas_interesados").select("*").in("tarea_id", tareaIds),
-          supabase.from("tareas_responsables").select("*").in("tarea_id", tareaIds),
-          supabase.from("tarea_timeline").select("*").in("tarea_id", tareaIds).order("creado_en", { ascending: true }),
+          tareaIds.length > 0
+            ? supabase.from("tareas_interesados").select("*").in("tarea_id", tareaIds)
+            : { data: [] },
+          tareaIds.length > 0
+            ? supabase.from("tareas_responsables").select("*").in("tarea_id", tareaIds)
+            : { data: [] },
+          tareaIds.length > 0
+            ? supabase.from("tarea_timeline").select("*").in("tarea_id", tareaIds).order("creado_en", { ascending: true })
+            : { data: [] },
         ]);
         if (cancelled) return;
         const byTarea = (arr: { tarea_id: string }[]) =>
@@ -66,7 +74,7 @@ export default function PersonaPageLoader({ slug }: { slug: string }) {
         const byResp = byTarea(responsablesRes.data ?? []);
         const byTimeline = byTarea(timelineRes.data ?? []);
         const prioridadOrden: Record<string, number> = { alta: 0, media: 1, baja: 2 };
-        const merged = tareasPendientes
+        const merged = tareasCompletadas
           .map((t: Record<string, unknown>) => ({
             ...t,
             interesados: byInt[t.id as string] ?? [],
@@ -116,5 +124,5 @@ export default function PersonaPageLoader({ slug }: { slug: string }) {
       </main>
     );
   }
-  return <PersonaPageClient persona={persona} tareas={tareas} slug={slug} />;
+  return <CompletadasPageClient persona={persona} tareas={tareas} slug={slug} />;
 }

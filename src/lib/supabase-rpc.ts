@@ -87,6 +87,38 @@ export async function reorderTareasClient(
   return { error: error ?? null };
 }
 
+export async function markTareaCompletadaClient(
+  slug: string,
+  editKey: string,
+  tareaId: string
+) {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("mark_tarea_completada_rpc", {
+    p_slug: slug,
+    p_edit_key: editKey,
+    p_tarea_id: tareaId,
+  });
+  if (error) return { data: null, error };
+  const row = Array.isArray(data) ? data[0] : data;
+  return { data: row, error: null };
+}
+
+export async function markTareaNoCompletadaClient(
+  slug: string,
+  editKey: string,
+  tareaId: string
+) {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("mark_tarea_no_completada_rpc", {
+    p_slug: slug,
+    p_edit_key: editKey,
+    p_tarea_id: tareaId,
+  });
+  if (error) return { data: null, error };
+  const row = Array.isArray(data) ? data[0] : data;
+  return { data: row, error: null };
+}
+
 export async function addInteresadoClient(
   slug: string,
   editKey: string,
