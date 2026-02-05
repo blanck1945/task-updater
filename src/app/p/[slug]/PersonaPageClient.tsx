@@ -29,30 +29,286 @@ type Persona = Omit<PersonaType, "edit_key">;
 const PRIORIDADES: PrioridadTarea[] = ["alta", "media", "baja"];
 
 function PrioridadBadge({ prioridad }: { prioridad: PrioridadTarea }) {
-  const colors =
-    prioridad === "alta"
-      ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-      : prioridad === "media"
-        ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
-        : "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300";
+  const styles = {
+    alta: "bg-[var(--priority-high-bg)] text-[var(--priority-high)] border-[var(--priority-high)]",
+    media: "bg-[var(--priority-medium-bg)] text-[var(--priority-medium)] border-[var(--priority-medium)]",
+    baja: "bg-[var(--priority-low-bg)] text-[var(--priority-low)] border-[var(--priority-low)]",
+  };
+  const icons = {
+    alta: (
+      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+      </svg>
+    ),
+    media: (
+      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+        <circle cx="10" cy="10" r="3" />
+      </svg>
+    ),
+    baja: (
+      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+      </svg>
+    ),
+  };
   return (
-    <span
-      className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${colors}`}
-      title={PRIORIDAD_LABELS[prioridad]}
-    >
-      {prioridad === "alta" && "▲"}
-      {prioridad === "media" && "◆"}
-      {prioridad === "baja" && "▽"}
-      <span className="ml-1">{PRIORIDAD_LABELS[prioridad]}</span>
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold border ${styles[prioridad]}`}>
+      {icons[prioridad]}
+      {PRIORIDAD_LABELS[prioridad]}
     </span>
   );
 }
 
 function EstadoActual({ estado }: { estado: string }) {
   return (
-    <span className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200">
-      {estado || "—"}
+    <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium bg-[var(--muted)] text-[var(--muted-foreground)]">
+      <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse-soft"></span>
+      {estado || "Sin estado"}
     </span>
+  );
+}
+
+function TareaEditForm({
+  tarea,
+  onSave,
+  onCancel,
+  onDelete,
+}: {
+  tarea: TareaConInteresados;
+  onSave: (updates: Partial<{ titulo: string; descripcion: string; estado: string; prioridad: PrioridadTarea }>) => void;
+  onCancel: () => void;
+  onDelete: () => void;
+}) {
+  const [titulo, setTitulo] = useState(tarea.titulo);
+  const [descripcion, setDescripcion] = useState(tarea.descripcion ?? "");
+  const [prioridad, setPrioridad] = useState(tarea.prioridad);
+
+  return (
+    <div className="space-y-4 animate-scale-in">
+      <input
+        value={titulo}
+        onChange={(e) => setTitulo(e.target.value)}
+        className="w-full text-lg font-semibold px-4 py-3 rounded-xl border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+        placeholder="Titulo de la tarea"
+      />
+      <textarea
+        value={descripcion}
+        onChange={(e) => setDescripcion(e.target.value)}
+        rows={3}
+        className="w-full px-4 py-3 rounded-xl border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] resize-none"
+        placeholder="Descripcion (opcional)"
+      />
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-[var(--muted-foreground)]">Prioridad:</span>
+        {PRIORIDADES.map((p) => (
+          <button
+            key={p}
+            type="button"
+            onClick={() => setPrioridad(p)}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              prioridad === p
+                ? p === "alta"
+                  ? "bg-[var(--priority-high)] text-white"
+                  : p === "media"
+                    ? "bg-[var(--priority-medium)] text-white"
+                    : "bg-[var(--priority-low)] text-white"
+                : "bg-[var(--muted)] text-[var(--muted-foreground)] hover:bg-[var(--border)]"
+            }`}
+          >
+            {PRIORIDAD_LABELS[p]}
+          </button>
+        ))}
+      </div>
+      <div className="flex items-center gap-3 pt-2">
+        <button
+          type="button"
+          onClick={() => onSave({ titulo, descripcion, prioridad })}
+          className="px-5 py-2.5 rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] font-medium hover:opacity-90 transition-all"
+        >
+          Guardar
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-5 py-2.5 rounded-xl border border-[var(--border)] hover:bg-[var(--muted)] transition-all"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          className="px-5 py-2.5 rounded-xl text-[var(--priority-high)] hover:bg-[var(--priority-high-bg)] transition-all ml-auto"
+        >
+          Eliminar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function NewTareaForm({
+  onSubmit,
+  onCancel,
+  interesados,
+  setInteresados,
+  responsables,
+  setResponsables,
+}: {
+  onSubmit: (formData: FormData, interesados: string[], responsables: string[]) => void;
+  onCancel: () => void;
+  interesados: string[];
+  setInteresados: (v: string[]) => void;
+  responsables: string[];
+  setResponsables: (v: string[]) => void;
+}) {
+  const [newInteresado, setNewInteresado] = useState("");
+  const [newResponsable, setNewResponsable] = useState("");
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit(new FormData(e.currentTarget), interesados, responsables);
+      }}
+      className="p-6 rounded-2xl border-2 border-dashed border-[var(--accent)] bg-[var(--card)] space-y-5 animate-scale-in"
+    >
+      <div className="space-y-2">
+        <label className="block text-sm font-medium">Titulo</label>
+        <input
+          name="titulo"
+          required
+          className="w-full px-4 py-3 rounded-xl border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+          placeholder="Que hay que hacer?"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="block text-sm font-medium">Descripcion</label>
+        <textarea
+          name="descripcion"
+          rows={2}
+          className="w-full px-4 py-3 rounded-xl border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] resize-none"
+          placeholder="Detalles adicionales (opcional)"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="block text-sm font-medium">Estado inicial</label>
+          <input
+            name="estado"
+            defaultValue="Por hacer"
+            className="w-full px-4 py-3 rounded-xl border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-sm font-medium">Prioridad</label>
+          <select
+            name="prioridad"
+            defaultValue="media"
+            className="w-full px-4 py-3 rounded-xl border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+          >
+            {PRIORIDADES.map((p) => (
+              <option key={p} value={p}>{PRIORIDAD_LABELS[p]}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Interesados */}
+      <div className="space-y-2">
+        <label className="block text-sm font-medium">Interesados</label>
+        <div className="flex flex-wrap gap-2 mb-2">
+          {interesados.map((name, i) => (
+            <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--muted)] text-sm">
+              {name}
+              <button type="button" onClick={() => setInteresados(interesados.filter((_, idx) => idx !== i))} className="hover:text-[var(--priority-high)]">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </span>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <input
+            value={newInteresado}
+            onChange={(e) => setNewInteresado(e.target.value)}
+            className="flex-1 px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+            placeholder="Nombre del interesado"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              if (newInteresado.trim()) {
+                setInteresados([...interesados, newInteresado.trim()]);
+                setNewInteresado("");
+              }
+            }}
+            className="px-4 py-2 rounded-xl bg-[var(--muted)] hover:bg-[var(--border)] transition-all"
+          >
+            Agregar
+          </button>
+        </div>
+      </div>
+
+      {/* Responsables */}
+      <div className="space-y-2">
+        <label className="block text-sm font-medium">Responsables</label>
+        <div className="flex flex-wrap gap-2 mb-2">
+          {responsables.map((name, i) => (
+            <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--accent)] bg-opacity-20 text-sm text-[var(--accent)]">
+              {name}
+              <button type="button" onClick={() => setResponsables(responsables.filter((_, idx) => idx !== i))} className="hover:opacity-60">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </span>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <input
+            value={newResponsable}
+            onChange={(e) => setNewResponsable(e.target.value)}
+            className="flex-1 px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+            placeholder="Nombre del responsable"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              if (newResponsable.trim()) {
+                setResponsables([...responsables, newResponsable.trim()]);
+                setNewResponsable("");
+              }
+            }}
+            className="px-4 py-2 rounded-xl bg-[var(--muted)] hover:bg-[var(--border)] transition-all"
+          >
+            Agregar
+          </button>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3 pt-2">
+        <button
+          type="submit"
+          className="px-6 py-3 rounded-xl bg-[var(--accent)] text-white font-medium hover:opacity-90 transition-all flex items-center gap-2"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Crear tarea
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-6 py-3 rounded-xl border border-[var(--border)] hover:bg-[var(--muted)] transition-all"
+        >
+          Cancelar
+        </button>
+      </div>
+    </form>
   );
 }
 
@@ -95,6 +351,15 @@ export function PersonaPageClient({
       ),
     [tareas, prioridadOrden]
   );
+
+  // Group tasks by priority
+  const tareasPorPrioridad = useMemo(() => {
+    return {
+      alta: tareasOrdenadas.filter(t => t.prioridad === "alta"),
+      media: tareasOrdenadas.filter(t => t.prioridad === "media"),
+      baja: tareasOrdenadas.filter(t => t.prioridad === "baja"),
+    };
+  }, [tareasOrdenadas]);
 
   useEffect(() => {
     const storedKey = getEditKeyForSlug(slug);
@@ -322,635 +587,481 @@ export function PersonaPageClient({
     );
   }
 
+  const stats = {
+    total: tareas.length,
+    alta: tareasPorPrioridad.alta.length,
+    media: tareasPorPrioridad.media.length,
+    baja: tareasPorPrioridad.baja.length,
+  };
+
   return (
-    <main className="min-h-screen max-w-5xl mx-auto px-6 py-10 md:px-10 md:py-12 lg:px-14">
-      <div className="space-y-8">
-        <header className="flex flex-wrap items-center justify-between gap-2 pb-6 border-b border-neutral-200 dark:border-neutral-700">
-          <div className="flex items-center gap-3">
-            {isEditing ? (
-              <div className="flex items-center gap-2">
-                <input
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  className="text-2xl font-semibold bg-neutral-100 dark:bg-neutral-800 px-3 py-1.5 rounded-lg border border-neutral-300 dark:border-neutral-600"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleSaveNombre()}
-                  className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                >
-                  Guardar
-                </button>
-              </div>
-            ) : (
-              <h1 className="text-2xl font-semibold text-neutral-800 dark:text-neutral-200">
-                {persona.nombre}
-              </h1>
-            )}
-            <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              /p/{slug}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
+    <main className="min-h-screen flex flex-col">
+      {/* Header */}
+      <header className="w-full border-b border-[var(--border)] glass sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <Link href="/" className="font-semibold text-xl tracking-tight">
+            TaskFlow
+          </Link>
+          <nav className="flex items-center gap-4">
             {editKeyVerified === false && (
               <button
                 type="button"
                 onClick={() => setShowKeyModal(true)}
-                className="text-sm px-3 py-1.5 rounded border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                className="text-sm px-4 py-2 rounded-xl border border-[var(--border)] hover:bg-[var(--muted)] transition-all"
               >
-                Editar esta página
+                Editar
               </button>
             )}
             {isEditing && (
               <button
                 type="button"
                 onClick={handleLeaveEdit}
-                className="text-sm px-3 py-1.5 rounded border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                className="text-sm px-4 py-2 rounded-xl border border-[var(--border)] hover:bg-[var(--muted)] transition-all"
               >
-                Dejar de editar
+                Salir de edicion
               </button>
             )}
-            <Link href={`/p/${encodeURIComponent(slug)}/completadas`} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
-              Tareas completas
+            <Link
+              href={`/p/${encodeURIComponent(slug)}/completadas`}
+              className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+            >
+              Completadas
             </Link>
-            <Link href="/" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+            <Link
+              href="/"
+              className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+            >
               Inicio
             </Link>
-          </div>
-        </header>
+          </nav>
+        </div>
+      </header>
 
-        <p className="text-sm text-neutral-600 dark:text-neutral-400">
-          Estado a la pasada: en qué estoy, qué tareas tengo, con quién está relacionado.
-        </p>
-
-        <section>
-          <h2 className="text-xl font-semibold text-neutral-800 dark:text-neutral-200 mb-5">
-            Tareas
-          </h2>
-          <ul className="space-y-6">
-            {tareasOrdenadas.map((tarea, index) => {
-              const borderL =
-                tarea.prioridad === "alta"
-                  ? "border-l-4 border-l-red-500"
-                  : tarea.prioridad === "media"
-                    ? "border-l-4 border-l-amber-500"
-                    : "border-l-4 border-l-emerald-500";
-              const isDragging = draggedTareaId === tarea.id;
-              const isDropTarget = dropTargetIndex === index && draggedTareaId && tarea.prioridad === draggedTareaPrioridad;
-              return (
-              <li
-                key={tarea.id}
-                draggable={isEditing}
-                onDragStart={(e) => {
-                  setDraggedTareaId(tarea.id);
-                  setDraggedTareaPrioridad(tarea.prioridad);
-                  e.dataTransfer.effectAllowed = "move";
-                  e.dataTransfer.setData("text/plain", tarea.id);
-                }}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  if (!draggedTareaId || tarea.id === draggedTareaId) return;
-                  if (tarea.prioridad !== draggedTareaPrioridad) return;
-                  setDropTargetIndex(index);
-                }}
-                onDragLeave={() => setDropTargetIndex(null)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setDropTargetIndex(null);
-                  if (!draggedTareaId || !draggedTareaPrioridad || tarea.prioridad !== draggedTareaPrioridad) {
-                    setDraggedTareaId(null);
-                    setDraggedTareaPrioridad(null);
-                    return;
-                  }
-                  const list = [...tareasOrdenadas];
-                  const dragIndex = list.findIndex((t) => t.id === draggedTareaId);
-                  if (dragIndex === -1) return;
-                  const [removed] = list.splice(dragIndex, 1);
-                  let insertIndex = index;
-                  if (dragIndex < insertIndex) insertIndex -= 1;
-                  list.splice(insertIndex, 0, removed);
-                  handleReorder(list.map((t) => t.id));
-                  setDraggedTareaId(null);
-                  setDraggedTareaPrioridad(null);
-                }}
-                onDragEnd={() => {
-                  setDraggedTareaId(null);
-                  setDraggedTareaPrioridad(null);
-                  setDropTargetIndex(null);
-                }}
-                className={`rounded-xl border border-neutral-200 dark:border-neutral-700 shadow-sm p-5 md:p-6 bg-white dark:bg-neutral-900/50 focus-within:shadow ${borderL} ${isEditing ? "cursor-grab active:cursor-grabbing" : ""} ${isDragging ? "opacity-50" : ""} ${isDropTarget ? "ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-neutral-900" : ""}`}
-              >
-                {editingTareaId === tarea.id && isEditing ? (
-                  <TareaEditForm
-                    tarea={tarea}
-                    onSave={(updates) => handleUpdateTarea(tarea.id, updates)}
-                    onCancel={() => setEditingTareaId(null)}
-                    onDelete={() => handleDeleteTarea(tarea.id)}
-                  />
-                ) : (
-                  <>
-                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <span className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                        {tarea.titulo}
-                      </span>
-                      <PrioridadBadge prioridad={tarea.prioridad} />
-                      <EstadoActual estado={tarea.estado} />
-                      {isEditing && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => setEditingTareaId(tarea.id)}
-                            className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                          >
-                            Editar
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleMarkCompletada(tarea.id)}
-                            className="text-sm text-emerald-600 dark:text-emerald-400 hover:underline"
-                          >
-                            Marcar como completada
-                          </button>
-                        </>
-                      )}
+      {/* Main Content */}
+      <div className="flex-1 max-w-6xl w-full mx-auto px-6 py-10">
+        <div className="space-y-10">
+          {/* Profile Header */}
+          <section className="animate-fade-in">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-[var(--accent)] flex items-center justify-center text-2xl font-bold text-white">
+                  {persona.nombre.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  {isEditing ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        value={nombre}
+                        onChange={(e) => setNombre(e.target.value)}
+                        className="text-2xl font-bold bg-[var(--muted)] px-3 py-1.5 rounded-xl border border-[var(--border)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleSaveNombre()}
+                        className="text-sm text-[var(--accent)] hover:underline"
+                      >
+                        Guardar
+                      </button>
                     </div>
-                    {tarea.created_at && (
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-3">
-                        Creada el{" "}
-                        {new Date(tarea.created_at).toLocaleDateString("es", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </p>
-                    )}
-                    {tarea.descripcion && (
-                      <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
-                        {tarea.descripcion}
-                      </p>
-                    )}
-                    <div className="space-y-3">
-                    {(tarea.timeline?.length ?? 0) > 0 && (
-                      <ul className="list-disc list-inside text-sm text-neutral-600 dark:text-neutral-400 space-y-1">
-                        {tarea.timeline!.map((e) => {
-                          const esUltimo = e.id === tarea.timeline![tarea.timeline!.length - 1]?.id;
-                          const editandoEste = editingTimelineEntryId === e.id;
-                          const fecha = e.creado_en
-                            ? new Date(e.creado_en).toLocaleString("es", {
-                                day: "numeric",
-                                month: "short",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
-                            : "";
-                          return (
-                            <li key={e.id}>
-                              {esUltimo && isEditing && editandoEste ? (
-                                <form
-                                  className="inline-flex flex-wrap items-center gap-2"
-                                  onSubmit={(ev) => {
-                                    ev.preventDefault();
-                                    const input = ev.currentTarget.querySelector("input") as HTMLInputElement;
-                                    handleUpdateTimelineEntry(tarea.id, e.id, input?.value ?? "");
-                                  }}
-                                >
-                                  <input
-                                    type="text"
-                                    defaultValue={e.contenido}
-                                    className="px-2 py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 min-w-[160px]"
-                                    autoFocus
-                                  />
-                                  <button type="submit" className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
-                                    Guardar
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setEditingTimelineEntryId(null)}
-                                    className="text-xs text-neutral-500 hover:underline"
-                                  >
-                                    Cancelar
-                                  </button>
-                                </form>
-                              ) : (
-                                <>
-                                  <span>{e.contenido}</span>
-                                  {fecha && (
-                                    <span className="ml-1.5 text-xs text-neutral-500">
-                                      — {fecha}
-                                    </span>
+                  ) : (
+                    <h1 className="text-2xl font-bold">{persona.nombre}</h1>
+                  )}
+                  <p className="text-[var(--muted-foreground)] text-sm">/p/{slug}</p>
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className="flex items-center gap-3">
+                <div className="px-4 py-2 rounded-xl bg-[var(--muted)] text-center">
+                  <p className="text-2xl font-bold">{stats.total}</p>
+                  <p className="text-xs text-[var(--muted-foreground)]">Total</p>
+                </div>
+                <div className="px-4 py-2 rounded-xl bg-[var(--priority-high-bg)] text-center">
+                  <p className="text-2xl font-bold text-[var(--priority-high)]">{stats.alta}</p>
+                  <p className="text-xs text-[var(--priority-high)]">Alta</p>
+                </div>
+                <div className="px-4 py-2 rounded-xl bg-[var(--priority-medium-bg)] text-center">
+                  <p className="text-2xl font-bold text-[var(--priority-medium)]">{stats.media}</p>
+                  <p className="text-xs text-[var(--priority-medium)]">Media</p>
+                </div>
+                <div className="px-4 py-2 rounded-xl bg-[var(--priority-low-bg)] text-center">
+                  <p className="text-2xl font-bold text-[var(--priority-low)]">{stats.baja}</p>
+                  <p className="text-xs text-[var(--priority-low)]">Baja</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* New Task Button */}
+          {isEditing && !newTareaOpen && (
+            <button
+              type="button"
+              onClick={() => setNewTareaOpen(true)}
+              className="w-full p-6 rounded-2xl border-2 border-dashed border-[var(--border)] hover:border-[var(--accent)] bg-[var(--card)] hover:bg-[var(--muted)] transition-all group flex items-center justify-center gap-3"
+            >
+              <div className="w-10 h-10 rounded-xl bg-[var(--accent)] bg-opacity-10 group-hover:bg-opacity-20 flex items-center justify-center transition-all">
+                <svg className="w-6 h-6 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </div>
+              <span className="font-medium text-[var(--muted-foreground)] group-hover:text-[var(--foreground)]">
+                Crear nueva tarea
+              </span>
+            </button>
+          )}
+
+          {/* New Task Form */}
+          {isEditing && newTareaOpen && (
+            <NewTareaForm
+              onSubmit={handleCreateTarea}
+              onCancel={() => {
+                setNewTareaOpen(false);
+                setNewTareaInteresados([]);
+                setNewTareaResponsables([]);
+              }}
+              interesados={newTareaInteresados}
+              setInteresados={setNewTareaInteresados}
+              responsables={newTareaResponsables}
+              setResponsables={setNewTareaResponsables}
+            />
+          )}
+
+          {/* Tasks List */}
+          <section className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold">Tareas</h2>
+              {isEditing && (
+                <p className="text-xs text-[var(--muted-foreground)]">
+                  Arrastra para reordenar dentro de la misma prioridad
+                </p>
+              )}
+            </div>
+
+            {tareasOrdenadas.length === 0 ? (
+              <div className="py-20 text-center animate-fade-in">
+                <div className="w-20 h-20 rounded-2xl bg-[var(--muted)] mx-auto flex items-center justify-center mb-6">
+                  <svg className="w-10 h-10 text-[var(--muted-foreground)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold mb-2">No hay tareas</h3>
+                <p className="text-[var(--muted-foreground)] mb-6">
+                  {isEditing ? "Crea tu primera tarea para comenzar" : "Esta pagina aun no tiene tareas"}
+                </p>
+              </div>
+            ) : (
+              <ul className="space-y-4">
+                {tareasOrdenadas.map((tarea, index) => {
+                  const borderColors = {
+                    alta: "border-l-[var(--priority-high)]",
+                    media: "border-l-[var(--priority-medium)]",
+                    baja: "border-l-[var(--priority-low)]",
+                  };
+                  const isDragging = draggedTareaId === tarea.id;
+                  const isDropTarget = dropTargetIndex === index && draggedTareaId && tarea.prioridad === draggedTareaPrioridad;
+
+                  return (
+                    <li
+                      key={tarea.id}
+                      draggable={isEditing}
+                      onDragStart={(e) => {
+                        setDraggedTareaId(tarea.id);
+                        setDraggedTareaPrioridad(tarea.prioridad);
+                        e.dataTransfer.effectAllowed = "move";
+                        e.dataTransfer.setData("text/plain", tarea.id);
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        if (!draggedTareaId || tarea.id === draggedTareaId) return;
+                        if (tarea.prioridad !== draggedTareaPrioridad) return;
+                        setDropTargetIndex(index);
+                      }}
+                      onDragLeave={() => setDropTargetIndex(null)}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        setDropTargetIndex(null);
+                        if (!draggedTareaId || !draggedTareaPrioridad || tarea.prioridad !== draggedTareaPrioridad) {
+                          setDraggedTareaId(null);
+                          setDraggedTareaPrioridad(null);
+                          return;
+                        }
+                        const list = [...tareasOrdenadas];
+                        const dragIndex = list.findIndex((t) => t.id === draggedTareaId);
+                        if (dragIndex === -1) return;
+                        const [removed] = list.splice(dragIndex, 1);
+                        let insertIndex = index;
+                        if (dragIndex < insertIndex) insertIndex -= 1;
+                        list.splice(insertIndex, 0, removed);
+                        handleReorder(list.map((t) => t.id));
+                        setDraggedTareaId(null);
+                        setDraggedTareaPrioridad(null);
+                      }}
+                      onDragEnd={() => {
+                        setDraggedTareaId(null);
+                        setDraggedTareaPrioridad(null);
+                        setDropTargetIndex(null);
+                      }}
+                      className={`rounded-2xl border border-[var(--border)] border-l-4 ${borderColors[tarea.prioridad]} shadow-sm bg-[var(--card)] overflow-hidden transition-all duration-200 animate-fade-in ${isEditing ? "cursor-grab active:cursor-grabbing" : ""} ${isDragging ? "opacity-50 scale-[0.98]" : ""} ${isDropTarget ? "ring-2 ring-[var(--accent)] ring-offset-2" : ""}`}
+                      style={{ animationDelay: `${index * 0.05}s` }}
+                    >
+                      <div className="p-5 md:p-6">
+                        {editingTareaId === tarea.id && isEditing ? (
+                          <TareaEditForm
+                            tarea={tarea}
+                            onSave={(updates) => handleUpdateTarea(tarea.id, updates)}
+                            onCancel={() => setEditingTareaId(null)}
+                            onDelete={() => handleDeleteTarea(tarea.id)}
+                          />
+                        ) : (
+                          <div className="space-y-4">
+                            {/* Header */}
+                            <div className="flex flex-wrap items-start gap-3">
+                              <div className="flex-1 min-w-0">
+                                <h3 className="text-lg font-semibold truncate">{tarea.titulo}</h3>
+                                {tarea.created_at && (
+                                  <p className="text-xs text-[var(--muted-foreground)] mt-1">
+                                    Creada el{" "}
+                                    {new Date(tarea.created_at).toLocaleDateString("es", {
+                                      day: "numeric",
+                                      month: "short",
+                                      year: "numeric",
+                                    })}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <PrioridadBadge prioridad={tarea.prioridad} />
+                                <EstadoActual estado={tarea.estado} />
+                              </div>
+                            </div>
+
+                            {/* Description */}
+                            {tarea.descripcion && (
+                              <p className="text-sm text-[var(--muted-foreground)] leading-relaxed">
+                                {tarea.descripcion}
+                              </p>
+                            )}
+
+                            {/* Timeline */}
+                            {(tarea.timeline?.length ?? 0) > 0 && (
+                              <div className="pt-3 border-t border-[var(--border)]">
+                                <p className="text-xs font-medium text-[var(--muted-foreground)] mb-2">Timeline</p>
+                                <ul className="space-y-2">
+                                  {tarea.timeline!.map((e) => {
+                                    const esUltimo = e.id === tarea.timeline![tarea.timeline!.length - 1]?.id;
+                                    const editandoEste = editingTimelineEntryId === e.id;
+                                    const fecha = e.creado_en
+                                      ? new Date(e.creado_en).toLocaleString("es", {
+                                          day: "numeric",
+                                          month: "short",
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })
+                                      : "";
+
+                                    if (editandoEste && isEditing) {
+                                      return (
+                                        <li key={e.id}>
+                                          <TimelineEditForm
+                                            contenido={e.contenido}
+                                            onSave={(c) => handleUpdateTimelineEntry(tarea.id, e.id, c)}
+                                            onCancel={() => setEditingTimelineEntryId(null)}
+                                          />
+                                        </li>
+                                      );
+                                    }
+
+                                    return (
+                                      <li key={e.id} className="flex items-start gap-3 text-sm group">
+                                        <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${esUltimo ? "bg-[var(--accent)]" : "bg-[var(--muted-foreground)]"}`}></span>
+                                        <div className="flex-1 min-w-0">
+                                          <span className={esUltimo ? "font-medium" : "text-[var(--muted-foreground)]"}>{e.contenido}</span>
+                                          {fecha && (
+                                            <span className="ml-2 text-xs text-[var(--muted-foreground)]">{fecha}</span>
+                                          )}
+                                          {esUltimo && <span className="ml-2 text-xs text-[var(--accent)]">(actual)</span>}
+                                        </div>
+                                        {isEditing && (
+                                          <button
+                                            type="button"
+                                            onClick={() => setEditingTimelineEntryId(e.id)}
+                                            className="opacity-0 group-hover:opacity-100 text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-all"
+                                          >
+                                            Editar
+                                          </button>
+                                        )}
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              </div>
+                            )}
+
+                            {/* Add Timeline */}
+                            {isEditing && newTimelineTareaId === tarea.id && (
+                              <TimelineAddForm
+                                onAdd={(c) => handleAddTimelineEntry(tarea.id, c)}
+                                onCancel={() => setNewTimelineTareaId(null)}
+                              />
+                            )}
+
+                            {/* People */}
+                            <div className="flex flex-wrap items-center gap-4 pt-3 border-t border-[var(--border)]">
+                              {/* Interesados */}
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-medium text-[var(--muted-foreground)]">Interesados:</span>
+                                <div className="flex flex-wrap gap-1">
+                                  {tarea.interesados.length === 0 ? (
+                                    <span className="text-xs text-[var(--muted-foreground)]">-</span>
+                                  ) : (
+                                    tarea.interesados.map((i) => (
+                                      <span
+                                        key={i.id}
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--muted)] text-xs group"
+                                      >
+                                        {i.nombre}
+                                        {isEditing && (
+                                          <button
+                                            type="button"
+                                            onClick={() => handleRemoveInteresado(i.id)}
+                                            className="opacity-0 group-hover:opacity-100 hover:text-[var(--priority-high)] transition-all"
+                                          >
+                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                          </button>
+                                        )}
+                                      </span>
+                                    ))
                                   )}
-                                  {esUltimo && (
-                                    <span className="ml-1 text-xs text-neutral-500">(actual)</span>
+                                  {isEditing && newInteresadoTareaId === tarea.id && (
+                                    <AddPersonForm
+                                      placeholder="Nombre"
+                                      onAdd={(n) => handleAddInteresado(tarea.id, n)}
+                                      onCancel={() => setNewInteresadoTareaId(null)}
+                                    />
                                   )}
-                                  {esUltimo && isEditing && !editandoEste && (
+                                  {isEditing && newInteresadoTareaId !== tarea.id && (
                                     <button
                                       type="button"
-                                      onClick={() => setEditingTimelineEntryId(e.id)}
-                                      className="ml-1.5 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                                      onClick={() => setNewInteresadoTareaId(tarea.id)}
+                                      className="px-2 py-0.5 rounded-full bg-[var(--muted)] text-xs hover:bg-[var(--border)] transition-all"
                                     >
-                                      Editar
+                                      +
                                     </button>
                                   )}
-                                </>
-                              )}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-                    {isEditing && (
-                      newTimelineTareaId === tarea.id ? (
-                        <form
-                          className="flex gap-2 mb-2"
-                          onSubmit={(e) => {
-                            e.preventDefault();
-                            const input = e.currentTarget.querySelector("input") as HTMLInputElement;
-                            handleAddTimelineEntry(tarea.id, input?.value ?? "");
-                            input.value = "";
-                          }}
-                        >
-                          <input
-                            type="text"
-                            placeholder="Nuevo status (ej. En revisión)"
-                            className="flex-1 px-2 py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800"
-                            autoFocus
-                          />
-                          <button type="submit" className="text-xs text-blue-600 hover:underline">
-                            Añadir
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setNewTimelineTareaId(null)}
-                            className="text-xs text-neutral-500 hover:underline"
-                          >
-                            Cancelar
-                          </button>
-                        </form>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setNewTimelineTareaId(tarea.id)}
-                          className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                        >
-                          + Añadir status al timeline
-                        </button>
-                      )
-                    )}
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm text-neutral-500 dark:text-neutral-400">Interesados:</span>
-                      {tarea.interesados.length === 0 ? (
-                        <span className="text-sm text-neutral-400">—</span>
-                      ) : (
-                        tarea.interesados.map((i) => (
-                          <span
-                            key={i.id}
-                            className="inline-flex items-center gap-1 rounded bg-neutral-100 dark:bg-neutral-700 px-2 py-0.5 text-sm"
-                          >
-                            {i.nombre}
-                            {isEditing && (
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveInteresado(i.id)}
-                                className="text-red-500 hover:text-red-700"
-                                aria-label="Quitar"
-                              >
-                                ×
-                              </button>
-                            )}
-                          </span>
-                        ))
-                      )}
-                      {isEditing && (
-                        newInteresadoTareaId === tarea.id ? (
-                          <form
-                            className="inline-flex gap-1"
-                            onSubmit={(e) => {
-                              e.preventDefault();
-                              const input = e.currentTarget.querySelector("input") as HTMLInputElement;
-                              handleAddInteresado(tarea.id, input?.value ?? "");
-                              input.value = "";
-                            }}
-                          >
-                            <input
-                              type="text"
-                              placeholder="Nombre"
-                              className="w-24 px-2 py-0.5 text-sm rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800"
-                              autoFocus
-                            />
-                            <button type="submit" className="text-xs text-blue-600 hover:underline">
-                              Añadir
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setNewInteresadoTareaId(null)}
-                              className="text-xs text-neutral-500 hover:underline"
-                            >
-                              Cancelar
-                            </button>
-                          </form>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => setNewInteresadoTareaId(tarea.id)}
-                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                          >
-                            + Interesado
-                          </button>
-                        )
-                      )}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm text-neutral-500 dark:text-neutral-400">Responsables:</span>
-                      {(tarea.responsables?.length ?? 0) === 0 ? (
-                        <span className="text-sm text-neutral-400">—</span>
-                      ) : (
-                        (tarea.responsables ?? []).map((r) => (
-                          <span
-                            key={r.id}
-                            className="inline-flex items-center gap-1 rounded bg-neutral-100 dark:bg-neutral-700 px-2 py-0.5 text-sm"
-                          >
-                            {r.nombre}
-                            {isEditing && (
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveResponsable(r.id)}
-                                className="text-red-500 hover:text-red-700"
-                                aria-label="Quitar"
-                              >
-                                ×
-                              </button>
-                            )}
-                          </span>
-                        ))
-                      )}
-                      {isEditing && (
-                        newResponsableTareaId === tarea.id ? (
-                          <form
-                            className="inline-flex gap-1"
-                            onSubmit={(e) => {
-                              e.preventDefault();
-                              const input = e.currentTarget.querySelector("input") as HTMLInputElement;
-                              handleAddResponsable(tarea.id, input?.value ?? "");
-                              input.value = "";
-                            }}
-                          >
-                            <input
-                              type="text"
-                              placeholder="Nombre"
-                              className="w-24 px-2 py-0.5 text-sm rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800"
-                              autoFocus
-                            />
-                            <button type="submit" className="text-xs text-blue-600 hover:underline">
-                              Añadir
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setNewResponsableTareaId(null)}
-                              className="text-xs text-neutral-500 hover:underline"
-                            >
-                              Cancelar
-                            </button>
-                          </form>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => setNewResponsableTareaId(tarea.id)}
-                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                          >
-                            + Responsable
-                          </button>
-                        )
-                      )}
-                    </div>
-                    </div>
-                  </>
-                )}
-              </li>
-            );
-            })}
-          </ul>
+                                </div>
+                              </div>
 
-          {isEditing && (
-            <>
-              {newTareaOpen ? (
-                <form
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    await handleCreateTarea(
-                      new FormData(e.currentTarget),
-                      newTareaInteresados,
-                      newTareaResponsables
-                    );
-                  }}
-                  className="mt-6 p-5 md:p-6 rounded-xl border border-dashed border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900/50 shadow-sm space-y-4"
-                >
-                  <input
-                    name="titulo"
-                    placeholder="Título"
-                    required
-                    className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800"
-                  />
-                  <textarea
-                    name="descripcion"
-                    placeholder="Descripción (opcional)"
-                    rows={2}
-                    className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800"
-                  />
-                  <div className="flex gap-2 flex-wrap">
-                    <input
-                      name="estado"
-                      type="text"
-                      placeholder="Estado (ej. Por hacer, En curso)"
-                      defaultValue="Por hacer"
-                      className="px-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 min-w-[140px]"
-                    />
-                    <select
-                      name="prioridad"
-                      defaultValue="media"
-                      className="px-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800"
-                    >
-                      {PRIORIDADES.map((p) => (
-                        <option key={p} value={p}>
-                          {PRIORIDAD_LABELS[p]}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <span className="text-sm text-neutral-500 dark:text-neutral-400">Interesados</span>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {newTareaInteresados.map((nombre, idx) => (
-                        <span
-                          key={idx}
-                          className="inline-flex items-center gap-1 rounded bg-neutral-100 dark:bg-neutral-700 px-2 py-0.5 text-sm"
-                        >
-                          {nombre}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setNewTareaInteresados((prev) => prev.filter((_, i) => i !== idx))
-                            }
-                            className="text-red-500 hover:text-red-700"
-                            aria-label="Quitar"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
-                      <div className="inline-flex gap-1">
-                        <input
-                          type="text"
-                          placeholder="Nombre"
-                          className="w-28 px-2 py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800"
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              const v = (e.target as HTMLInputElement).value?.trim();
-                              if (v) {
-                                setNewTareaInteresados((prev) => [...prev, v]);
-                                (e.target as HTMLInputElement).value = "";
-                              }
-                            }
-                          }}
-                        />
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            const el = e.currentTarget.parentElement?.querySelector('input[type="text"]') as HTMLInputElement | undefined;
-                            const v = el?.value?.trim();
-                            if (v) {
-                              setNewTareaInteresados((prev) => [...prev, v]);
-                              if (el) el.value = "";
-                            }
-                          }}
-                          className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                        >
-                          Añadir
-                        </button>
+                              {/* Responsables */}
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-medium text-[var(--muted-foreground)]">Responsables:</span>
+                                <div className="flex flex-wrap gap-1">
+                                  {(tarea.responsables?.length ?? 0) === 0 ? (
+                                    <span className="text-xs text-[var(--muted-foreground)]">-</span>
+                                  ) : (
+                                    (tarea.responsables ?? []).map((r) => (
+                                      <span
+                                        key={r.id}
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--accent)] bg-opacity-20 text-[var(--accent)] text-xs group"
+                                      >
+                                        {r.nombre}
+                                        {isEditing && (
+                                          <button
+                                            type="button"
+                                            onClick={() => handleRemoveResponsable(r.id)}
+                                            className="opacity-0 group-hover:opacity-100 hover:opacity-60 transition-all"
+                                          >
+                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                          </button>
+                                        )}
+                                      </span>
+                                    ))
+                                  )}
+                                  {isEditing && newResponsableTareaId === tarea.id && (
+                                    <AddPersonForm
+                                      placeholder="Nombre"
+                                      onAdd={(n) => handleAddResponsable(tarea.id, n)}
+                                      onCancel={() => setNewResponsableTareaId(null)}
+                                    />
+                                  )}
+                                  {isEditing && newResponsableTareaId !== tarea.id && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setNewResponsableTareaId(tarea.id)}
+                                      className="px-2 py-0.5 rounded-full bg-[var(--accent)] bg-opacity-20 text-[var(--accent)] text-xs hover:bg-opacity-30 transition-all"
+                                    >
+                                      +
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Actions */}
+                            {isEditing && (
+                              <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-[var(--border)]">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingTareaId(tarea.id)}
+                                  className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+                                >
+                                  Editar
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setNewTimelineTareaId(tarea.id)}
+                                  className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+                                >
+                                  Actualizar estado
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleMarkCompletada(tarea.id)}
+                                  className="text-sm text-[var(--priority-low)] hover:underline transition-colors ml-auto"
+                                >
+                                  Marcar completada
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <span className="text-sm text-neutral-500 dark:text-neutral-400">Responsables</span>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {newTareaResponsables.map((nombre, idx) => (
-                        <span
-                          key={idx}
-                          className="inline-flex items-center gap-1 rounded bg-neutral-100 dark:bg-neutral-700 px-2 py-0.5 text-sm"
-                        >
-                          {nombre}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setNewTareaResponsables((prev) => prev.filter((_, i) => i !== idx))
-                            }
-                            className="text-red-500 hover:text-red-700"
-                            aria-label="Quitar"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
-                      <div className="inline-flex gap-1">
-                        <input
-                          type="text"
-                          placeholder="Nombre"
-                          className="w-28 px-2 py-1 text-sm rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800"
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              const v = (e.target as HTMLInputElement).value?.trim();
-                              if (v) {
-                                setNewTareaResponsables((prev) => [...prev, v]);
-                                (e.target as HTMLInputElement).value = "";
-                              }
-                            }
-                          }}
-                        />
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            const el = e.currentTarget.parentElement?.querySelector('input[type="text"]') as HTMLInputElement | undefined;
-                            const v = el?.value?.trim();
-                            if (v) {
-                              setNewTareaResponsables((prev) => [...prev, v]);
-                              if (el) el.value = "";
-                            }
-                          }}
-                          className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                        >
-                          Añadir
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      type="submit"
-                      className="px-4 py-2.5 rounded-lg bg-neutral-800 dark:bg-neutral-200 text-white dark:text-neutral-900 text-sm font-medium"
-                    >
-                      Crear tarea
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setNewTareaOpen(false);
-                        setNewTareaInteresados([]);
-                        setNewTareaResponsables([]);
-                      }}
-                      className="px-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 text-sm"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setNewTareaOpen(true);
-                    setNewTareaInteresados([]);
-                    setNewTareaResponsables([]);
-                  }}
-                  className="mt-6 px-5 py-3 rounded-xl border border-dashed border-neutral-400 dark:border-neutral-500 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 text-sm"
-                >
-                  + Nueva tarea
-                </button>
-              )}
-            </>
-          )}
-        </section>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+        </div>
       </div>
 
+      {/* Key Modal */}
       {showKeyModal && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-10 p-4"
-          onClick={() => setShowKeyModal(false)}
-        >
-          <div
-            className="bg-white dark:bg-neutral-900 rounded-lg shadow-xl max-w-sm w-full p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-medium mb-2">Clave de edición</h3>
-            <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
-              Ingresa la clave para poder editar esta página.
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-sm p-6 rounded-2xl bg-[var(--card)] shadow-2xl animate-scale-in">
+            <h2 className="text-xl font-bold mb-2">Ingresar clave de edicion</h2>
+            <p className="text-sm text-[var(--muted-foreground)] mb-6">
+              Ingresa la clave para editar esta pagina
             </p>
-            <form onSubmit={handleSubmitKey}>
+            <form onSubmit={handleSubmitKey} className="space-y-4">
               <input
                 type="password"
                 value={keyInput}
                 onChange={(e) => setKeyInput(e.target.value)}
-                placeholder="Clave"
-                className="w-full px-4 py-2 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 mb-2"
+                placeholder="Tu clave secreta"
+                className="w-full px-4 py-3 rounded-xl border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                 autoFocus
               />
               {keyError && (
-                <p className="text-sm text-red-600 dark:text-red-400 mb-2">{keyError}</p>
+                <p className="text-sm text-[var(--priority-high)]">{keyError}</p>
               )}
-              <div className="flex gap-2">
+              <div className="flex items-center gap-3">
                 <button
                   type="submit"
-                  className="flex-1 py-2 px-4 rounded bg-neutral-800 dark:bg-neutral-200 text-white dark:text-neutral-900 font-medium"
+                  className="flex-1 py-3 rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] font-medium hover:opacity-90 transition-all"
                 >
                   Entrar
                 </button>
@@ -961,7 +1072,7 @@ export function PersonaPageClient({
                     setKeyInput("");
                     setKeyError(null);
                   }}
-                  className="py-2 px-4 rounded border border-neutral-300 dark:border-neutral-600"
+                  className="py-3 px-6 rounded-xl border border-[var(--border)] hover:bg-[var(--muted)] transition-all"
                 >
                   Cancelar
                 </button>
@@ -974,77 +1085,110 @@ export function PersonaPageClient({
   );
 }
 
-function TareaEditForm({
-  tarea,
+function TimelineEditForm({
+  contenido: initial,
   onSave,
   onCancel,
-  onDelete,
 }: {
-  tarea: TareaConInteresados;
-  onSave: (u: Partial<{ titulo: string; descripcion: string; estado: string; prioridad: PrioridadTarea }>) => void;
+  contenido: string;
+  onSave: (c: string) => void;
   onCancel: () => void;
-  onDelete: () => void;
 }) {
-  const [titulo, setTitulo] = useState(tarea.titulo);
-  const [descripcion, setDescripcion] = useState(tarea.descripcion ?? "");
-  const [estado, setEstado] = useState(tarea.estado);
-  const [prioridad, setPrioridad] = useState<PrioridadTarea>(tarea.prioridad);
-
+  const [contenido, setContenido] = useState(initial);
   return (
-    <div className="space-y-4">
+    <div className="flex items-center gap-2 animate-scale-in">
       <input
-        value={titulo}
-        onChange={(e) => setTitulo(e.target.value)}
-        className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 font-medium"
+        value={contenido}
+        onChange={(e) => setContenido(e.target.value)}
+        className="flex-1 px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+        autoFocus
       />
-      <textarea
-        value={descripcion}
-        onChange={(e) => setDescripcion(e.target.value)}
-        rows={2}
-        className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-sm"
+      <button
+        type="button"
+        onClick={() => onSave(contenido)}
+        className="px-3 py-2 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] text-sm hover:opacity-90 transition-all"
+      >
+        Guardar
+      </button>
+      <button
+        type="button"
+        onClick={onCancel}
+        className="px-3 py-2 rounded-lg border border-[var(--border)] text-sm hover:bg-[var(--muted)] transition-all"
+      >
+        Cancelar
+      </button>
+    </div>
+  );
+}
+
+function TimelineAddForm({
+  onAdd,
+  onCancel,
+}: {
+  onAdd: (c: string) => void;
+  onCancel: () => void;
+}) {
+  const [contenido, setContenido] = useState("");
+  return (
+    <div className="flex items-center gap-2 animate-scale-in">
+      <input
+        value={contenido}
+        onChange={(e) => setContenido(e.target.value)}
+        placeholder="Nuevo estado..."
+        className="flex-1 px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+        autoFocus
       />
-      <div className="flex flex-wrap gap-2">
-        <input
-          value={estado}
-          onChange={(e) => setEstado(e.target.value)}
-          placeholder="Estado (ej. Por hacer, En curso)"
-          className="px-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-sm min-w-[140px]"
-        />
-        <select
-          value={prioridad}
-          onChange={(e) => setPrioridad(e.target.value as PrioridadTarea)}
-          className="px-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-sm"
-        >
-          {PRIORIDADES.map((p) => (
-            <option key={p} value={p}>
-              {PRIORIDAD_LABELS[p]}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => onSave({ titulo, descripcion: descripcion || "", estado, prioridad })}
-          className="text-sm px-4 py-2.5 rounded-lg bg-neutral-800 dark:bg-neutral-200 text-white dark:text-neutral-900"
-        >
-          Guardar
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="text-sm px-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600"
-        >
-          Cancelar
-        </button>
-        <button
-          type="button"
-          onClick={onDelete}
-          className="text-sm px-4 py-2.5 text-red-600 dark:text-red-400 hover:underline rounded-lg"
-        >
-          Eliminar tarea
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={() => onAdd(contenido)}
+        className="px-3 py-2 rounded-lg bg-[var(--accent)] text-white text-sm hover:opacity-90 transition-all"
+      >
+        Agregar
+      </button>
+      <button
+        type="button"
+        onClick={onCancel}
+        className="px-3 py-2 rounded-lg border border-[var(--border)] text-sm hover:bg-[var(--muted)] transition-all"
+      >
+        Cancelar
+      </button>
+    </div>
+  );
+}
+
+function AddPersonForm({
+  placeholder,
+  onAdd,
+  onCancel,
+}: {
+  placeholder: string;
+  onAdd: (n: string) => void;
+  onCancel: () => void;
+}) {
+  const [nombre, setNombre] = useState("");
+  return (
+    <div className="inline-flex items-center gap-1 animate-scale-in">
+      <input
+        value={nombre}
+        onChange={(e) => setNombre(e.target.value)}
+        placeholder={placeholder}
+        className="w-24 px-2 py-0.5 rounded text-xs border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+        autoFocus
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            onAdd(nombre);
+          }
+          if (e.key === "Escape") onCancel();
+        }}
+      />
+      <button
+        type="button"
+        onClick={() => onAdd(nombre)}
+        className="text-xs text-[var(--accent)] hover:underline"
+      >
+        OK
+      </button>
     </div>
   );
 }

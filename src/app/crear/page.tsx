@@ -11,32 +11,6 @@ export default function CrearPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
-  const [testLoading, setTestLoading] = useState(false);
-
-  async function runTest() {
-    setTestResult(null);
-    setTestLoading(true);
-    try {
-      const slug = `test-${Date.now()}`;
-      const supabase = createClient();
-      const { data, error: err } = await supabase
-        .from("personas")
-        .insert({ nombre: "Test", slug, edit_key: "test123" })
-        .select()
-        .single();
-      if (err) {
-        setTestResult({ ok: false, msg: `${err.message} (code: ${err.code ?? "—"})` });
-        return;
-      }
-      setTestResult({ ok: true, msg: `Registro creado: id=${data?.id}, slug=${data?.slug}. Borralo desde Supabase si quieres.` });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      setTestResult({ ok: false, msg });
-    } finally {
-      setTestLoading(false);
-    }
-  }
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -54,7 +28,7 @@ export default function CrearPage() {
       return;
     }
     if (edit_key !== edit_key_confirm) {
-      setError("La clave y su confirmación no coinciden.");
+      setError("La clave y su confirmacion no coinciden.");
       setLoading(false);
       return;
     }
@@ -66,162 +40,186 @@ export default function CrearPage() {
       .single();
     setLoading(false);
     if (err) {
-      setError(err.message ?? "Error al crear la página.");
+      setError(err.message ?? "Error al crear la pagina.");
       return;
     }
     if (data) {
-      setSuccess(`Página creada. Redirigiendo a /p/${data.slug}...`);
+      setSuccess(`Pagina creada. Redirigiendo...`);
       setStoredEditKey(data.slug, edit_key);
       setTimeout(() => router.push(`/p/${encodeURIComponent(data.slug)}?edit=1`), 1200);
     }
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  let supabaseHost = "(no configurada)";
-  try {
-    if (supabaseUrl) supabaseHost = new URL(supabaseUrl).hostname;
-  } catch {
-    supabaseHost = "(URL inválida)";
-  }
-  const isPlaceholderUrl = (host: string) => {
-    const h = host.toLowerCase();
-    return h.includes("your-project") || h.includes("tu-proyecto");
-  };
-  const hasEnv = typeof window !== "undefined" && supabaseUrl && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
   return (
-    <main className="min-h-screen p-6 flex flex-col items-center">
-      <div className="w-full max-w-md space-y-6">
-        <h1 className="text-xl font-semibold text-neutral-800 dark:text-neutral-200">
-          Crear mi página
-        </h1>
-        <p className="text-sm text-neutral-600 dark:text-neutral-400">
-          Nombre, slug para la URL y clave para editar (guárdala).
-        </p>
-
-        {/* Prueba de conexión: solo en desarrollo */}
-        {process.env.NODE_ENV === "development" && (
-          <section className="rounded-lg border border-neutral-200 dark:border-neutral-700 p-4 bg-neutral-50 dark:bg-neutral-800/50">
-            <h2 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-              Probar conexión con Supabase
-            </h2>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2 font-mono">
-              URL que usa el cliente: {supabaseHost}
-            </p>
-            {isPlaceholderUrl(supabaseHost) && (
-              <p className="text-sm text-amber-600 dark:text-amber-400 mb-2">
-                La URL parece de ejemplo. Configurá .env con NEXT_PUBLIC_SUPABASE_URL (tu URL real en Project Settings → API). Borrá la carpeta <code className="bg-neutral-200 dark:bg-neutral-700 px-1 rounded">.next</code>, reiniciá con <code className="bg-neutral-200 dark:bg-neutral-700 px-1 rounded">npm run dev</code> y recargá.
-              </p>
-            )}
-            {typeof window !== "undefined" && !hasEnv && (
-              <p className="text-sm text-amber-600 dark:text-amber-400 mb-2">
-                En el navegador no se ven NEXT_PUBLIC_SUPABASE_URL ni ANON_KEY. Revisá .env y reiniciá el servidor.
-              </p>
-            )}
-            <button
-              type="button"
-              onClick={runTest}
-              disabled={testLoading}
-              className="px-4 py-2 rounded-lg bg-neutral-700 dark:bg-neutral-600 text-white text-sm font-medium hover:bg-neutral-600 dark:hover:bg-neutral-500 disabled:opacity-50"
-            >
-              {testLoading ? "Probando…" : "Crear registro de prueba"}
-            </button>
-            {testResult && (
-              <div
-                className={`mt-3 p-3 rounded text-sm ${testResult.ok ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200" : "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200"}`}
-              >
-                {testResult.ok ? "✓ " : "✗ "}
-                {testResult.msg}
-              </div>
-            )}
-          </section>
-        )}
-
-        <form onSubmit={submit} className="space-y-4">
-          <div>
-            <label htmlFor="nombre" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-              Nombre
-            </label>
-            <input
-              id="nombre"
-              name="nombre"
-              type="text"
-              placeholder="Juan Pérez"
-              className="w-full px-4 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
-              required
-              disabled={loading}
-            />
-          </div>
-          <div>
-            <label htmlFor="slug" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-              Slug (URL)
-            </label>
-            <input
-              id="slug"
-              name="slug"
-              type="text"
-              placeholder="juan-perez"
-              className="w-full px-4 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
-              required
-              disabled={loading}
-            />
-            <p className="text-xs text-neutral-500 mt-1">Tu página: /p/tu-slug</p>
-          </div>
-          <div>
-            <label htmlFor="edit_key" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-              Clave de edición
-            </label>
-            <input
-              id="edit_key"
-              name="edit_key"
-              type="password"
-              placeholder="••••••••"
-              className="w-full px-4 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
-              required
-              disabled={loading}
-            />
-          </div>
-          <div>
-            <label htmlFor="edit_key_confirm" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-              Confirmar clave
-            </label>
-            <input
-              id="edit_key_confirm"
-              name="edit_key_confirm"
-              type="password"
-              placeholder="••••••••"
-              className="w-full px-4 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
-              required
-              disabled={loading}
-            />
-          </div>
-
-          {error && (
-            <div className="p-3 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 text-sm border border-red-200 dark:border-red-800">
-              {error}
-            </div>
-          )}
-          {success && (
-            <div className="p-3 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 text-sm border border-green-200 dark:border-green-800">
-              {success}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 px-4 rounded-lg bg-neutral-800 dark:bg-neutral-200 text-white dark:text-neutral-900 font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? "Creando… (esperá)" : "Crear página"}
-          </button>
-        </form>
-
-        <p className="text-center">
-          <Link href="/" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
-            Volver al inicio
+    <main className="min-h-screen flex flex-col">
+      {/* Header */}
+      <header className="w-full border-b border-[var(--border)] glass sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <Link href="/" className="font-semibold text-xl tracking-tight">
+            TaskFlow
           </Link>
-        </p>
-      </div>
+          <nav className="flex items-center gap-6">
+            <Link 
+              href="/" 
+              className="text-sm font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+            >
+              Inicio
+            </Link>
+          </nav>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <section className="flex-1 flex items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md space-y-8 animate-fade-in">
+          {/* Header */}
+          <div className="text-center space-y-3">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[var(--accent)] bg-opacity-10 mb-4">
+              <svg className="w-8 h-8 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Crear mi pagina
+            </h1>
+            <p className="text-[var(--muted-foreground)]">
+              Configura tu espacio personal de estado
+            </p>
+          </div>
+
+          {/* Form Card */}
+          <div className="p-8 rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-xl">
+            <form onSubmit={submit} className="space-y-6">
+              {/* Nombre */}
+              <div className="space-y-2">
+                <label htmlFor="nombre" className="block text-sm font-medium">
+                  Nombre
+                </label>
+                <input
+                  id="nombre"
+                  name="nombre"
+                  type="text"
+                  placeholder="Juan Perez"
+                  className="w-full px-4 py-3 rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent transition-all"
+                  required
+                  disabled={loading}
+                />
+              </div>
+
+              {/* Slug */}
+              <div className="space-y-2">
+                <label htmlFor="slug" className="block text-sm font-medium">
+                  Slug (URL)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] text-sm">
+                    /p/
+                  </span>
+                  <input
+                    id="slug"
+                    name="slug"
+                    type="text"
+                    placeholder="juan-perez"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent transition-all"
+                    required
+                    disabled={loading}
+                  />
+                </div>
+                <p className="text-xs text-[var(--muted-foreground)]">
+                  Esta sera la URL de tu pagina
+                </p>
+              </div>
+
+              {/* Clave */}
+              <div className="space-y-2">
+                <label htmlFor="edit_key" className="block text-sm font-medium">
+                  Clave de edicion
+                </label>
+                <input
+                  id="edit_key"
+                  name="edit_key"
+                  type="password"
+                  placeholder="Tu clave secreta"
+                  className="w-full px-4 py-3 rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent transition-all"
+                  required
+                  disabled={loading}
+                />
+              </div>
+
+              {/* Confirmar clave */}
+              <div className="space-y-2">
+                <label htmlFor="edit_key_confirm" className="block text-sm font-medium">
+                  Confirmar clave
+                </label>
+                <input
+                  id="edit_key_confirm"
+                  name="edit_key_confirm"
+                  type="password"
+                  placeholder="Repite la clave"
+                  className="w-full px-4 py-3 rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent transition-all"
+                  required
+                  disabled={loading}
+                />
+              </div>
+
+              {/* Messages */}
+              {error && (
+                <div className="p-4 rounded-xl bg-[var(--priority-high-bg)] border border-[var(--priority-high)] text-[var(--priority-high)] text-sm flex items-center gap-3 animate-scale-in">
+                  <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {error}
+                </div>
+              )}
+              {success && (
+                <div className="p-4 rounded-xl bg-[var(--priority-low-bg)] border border-[var(--priority-low)] text-[var(--priority-low)] text-sm flex items-center gap-3 animate-scale-in">
+                  <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  {success}
+                </div>
+              )}
+
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-4 px-6 rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Creando...
+                  </>
+                ) : (
+                  <>
+                    Crear pagina
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+
+          {/* Back Link */}
+          <p className="text-center">
+            <Link 
+              href="/" 
+              className="inline-flex items-center gap-2 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Volver al inicio
+            </Link>
+          </p>
+        </div>
+      </section>
     </main>
   );
 }
