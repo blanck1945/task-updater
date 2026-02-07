@@ -115,10 +115,12 @@ export function CompletadasPageClient({
                     {tarea.created_at && (
                       <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
                         Creada el{" "}
-                        {new Date(tarea.created_at).toLocaleDateString("es", {
+                        {new Date(tarea.created_at).toLocaleString("es", {
                           day: "numeric",
                           month: "short",
                           year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
                         })}
                       </p>
                     )}

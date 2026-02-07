@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   verifyEditKeyClient,
   updatePersonaClient,
@@ -66,6 +66,7 @@ export function PersonaPageClient({
   slug: string;
 }) {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [editKeyVerified, setEditKeyVerified] = useState<boolean | null>(null);
   const [showKeyModal, setShowKeyModal] = useState(false);
@@ -248,6 +249,7 @@ export function PersonaPageClient({
     if (error) return;
     setTareas((prev) => prev.filter((t) => t.id !== tareaId));
     setEditingTareaId(null);
+    router.push(`/p/${encodeURIComponent(slug)}/completadas`);
   }
 
   async function handleReorder(newOrderIds: string[]) {
@@ -352,10 +354,16 @@ export function PersonaPageClient({
             </span>
           </div>
           <div className="flex items-center gap-2">
-            {editKeyVerified === false && (
+            {!isEditing && (
               <button
                 type="button"
-                onClick={() => setShowKeyModal(true)}
+                onClick={() => {
+                  if (editKeyVerified === true) {
+                    setIsEditing(true);
+                  } else {
+                    setShowKeyModal(true);
+                  }
+                }}
                 className="text-sm px-3 py-1.5 rounded border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800"
               >
                 Editar esta página
@@ -382,6 +390,11 @@ export function PersonaPageClient({
         <p className="text-sm text-neutral-600 dark:text-neutral-400">
           Estado a la pasada: en qué estoy, qué tareas tengo, con quién está relacionado.
         </p>
+        {!isEditing && (
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+            Para editar una tarea o marcarla como completada, hacé clic en «Editar esta página» e ingresá tu clave.
+          </p>
+        )}
 
         <section>
           <h2 className="text-xl font-semibold text-neutral-800 dark:text-neutral-200 mb-5">
@@ -477,10 +490,12 @@ export function PersonaPageClient({
                     {tarea.created_at && (
                       <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-3">
                         Creada el{" "}
-                        {new Date(tarea.created_at).toLocaleDateString("es", {
+                        {new Date(tarea.created_at).toLocaleString("es", {
                           day: "numeric",
                           month: "short",
                           year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
                         })}
                       </p>
                     )}
@@ -722,6 +737,17 @@ export function PersonaPageClient({
                         )
                       )}
                     </div>
+                    {isEditing && (
+                      <div className="pt-3 mt-3 border-t border-neutral-200 dark:border-neutral-700">
+                        <button
+                          type="button"
+                          onClick={() => handleMarkCompletada(tarea.id)}
+                          className="px-4 py-2 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-500 dark:hover:bg-emerald-600"
+                        >
+                          Completar tarea
+                        </button>
+                      </div>
+                    )}
                     </div>
                   </>
                 )}
